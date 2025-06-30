@@ -3,8 +3,6 @@ package cache
 import (
 	"context"
 	"errors"
-	"one-api/common/config"
-	"one-api/common/redis"
 	"time"
 
 	"github.com/coocood/freecache"
@@ -12,7 +10,6 @@ import (
 	"github.com/eko/gocache/lib/v4/marshaler"
 	"github.com/eko/gocache/lib/v4/store"
 	freecache_store "github.com/eko/gocache/store/freecache/v4"
-	redis_store "github.com/eko/gocache/store/redis/v4"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -25,16 +22,7 @@ var (
 )
 
 func InitCacheManager() {
-	var client *cacheM.Cache[any]
-	if config.RedisEnabled {
-		redisStore := redis_store.NewRedis(redis.RDB)
-		client = cacheM.New[any](redisStore)
-	} else {
-		freecacheStore := freecache_store.NewFreecache(freecache.NewCache(1024 * 1024))
-		client = cacheM.New[any](freecacheStore)
-	}
-
-	kvCache = marshaler.New(client)
+	kvCache = marshaler.New(cacheM.New[any](freecache_store.NewFreecache(freecache.NewCache(1024 * 1024))))
 }
 
 func GetCache[T any](key string) (T, error) {

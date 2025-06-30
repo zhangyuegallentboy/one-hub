@@ -25,10 +25,6 @@ var (
 )
 
 func CacheGetTokenByKey(key string) (*Token, error) {
-	if !config.RedisEnabled {
-		return GetTokenByKey(key)
-	}
-
 	token, err := cache.GetOrSetCache(
 		fmt.Sprintf(UserTokensKey, key),
 		time.Duration(TokenCacheSeconds)*time.Second,
@@ -101,10 +97,6 @@ func CacheDecreaseUserQuota(id int, quota int) error {
 }
 
 func CacheIsUserEnabled(userId int) (bool, error) {
-	if !config.RedisEnabled {
-		return IsUserEnabled(userId)
-	}
-
 	enabled, err := cache.GetOrSetCache(
 		fmt.Sprintf(UserEnabledCacheKey, userId),
 		time.Duration(TokenCacheSeconds)*time.Second,

@@ -371,7 +371,9 @@ func IsAdmin(userId int) bool {
 		return false
 	}
 	var user User
-	err := DB.Where("id = ?", userId).Select("role").Find(&user).Error
+	err := common.Retry(func() error {
+		return DB.Where("id = ?", userId).Select("role").Find(&user).Error
+	})
 	if err != nil {
 		logger.SysError("no such user " + err.Error())
 		return false
@@ -384,7 +386,9 @@ func IsUserEnabled(userId int) (bool, error) {
 		return false, errors.New("user id is empty")
 	}
 	var user User
-	err := DB.Where("id = ?", userId).Select("status").Find(&user).Error
+	err := common.Retry(func() error {
+		return DB.Where("id = ?", userId).Select("status").Find(&user).Error
+	})
 	if err != nil {
 		return false, err
 	}

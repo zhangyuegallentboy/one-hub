@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"one-api/common"
+	"one-api/common/cache"
 	"one-api/common/config"
 	"one-api/common/database"
 	"one-api/common/logger"
@@ -203,7 +204,9 @@ func GetTokenByKey(key string) (*Token, error) {
 
 	var token Token
 
-	err := DB.Where(keyCol+" = ?", key).First(&token).Error
+	err := common.Retry(func() error {
+		return DB.Where(keyCol+" = ?", key).First(&token).Error
+	})
 	return &token, err
 }
 
@@ -244,6 +247,7 @@ func DeleteTokenById(id int, userId int) (err error) {
 		return err
 	}
 	err = token.Delete()
+	cache.DeleteCache(fmt.Sprintf(UserTokensKey, token.Key))
 
 	if err == nil && config.RedisEnabled {
 		redis.RedisDel(fmt.Sprintf(UserTokensKey, token.Key))
