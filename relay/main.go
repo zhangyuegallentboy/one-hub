@@ -115,17 +115,20 @@ func RelayHandler(relay RelayBaseInterface) (err *types.OpenAIErrorWithStatusCod
 	}
 
 	relay.getProvider().SetUsage(usage)
+	ctx := relay.getContext()
 
-	quota := relay_util.NewQuota(relay.getContext(), relay.getModelName(), promptTokens)
-	if err = quota.PreQuotaConsumption(); err != nil {
-		done = true
-		return
+	quota := relay_util.NewQuota(ctx, relay.getModelName(), promptTokens)
+	userId := ctx.GetInt("id")
+	if userId != 1 {
+		if err = quota.PreQuotaConsumption(); err != nil {
+			done = true
+			return
+		}
 	}
-
 	err, done = relay.send()
 
 	if err != nil {
-		quota.Undo(relay.getContext())
+		quota.Undo(ctx)
 		return
 	}
 
@@ -137,7 +140,7 @@ func RelayHandler(relay RelayBaseInterface) (err *types.OpenAIErrorWithStatusCod
 
 	quota.SetFirstResponseTime(relay.GetFirstResponseTime())
 
-	quota.Consume(relay.getContext(), usage, relay.IsStream())
+	quota.Consume(ctx, usage, relay.IsStream())
 
 	return
 }
