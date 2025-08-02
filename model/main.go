@@ -87,6 +87,21 @@ func chooseDB() (*gorm.DB, error) {
 		return gorm.Open(mysql.Open(dsn), &gorm.Config{
 			PrepareStmt: true, // precompile SQL
 		})
+	} else if viper.IsSet("instance_unix_socket") {
+		unixSocket := viper.GetString("instance_unix_socket")
+		dbUser := viper.GetString("db_user")
+		dbPass := viper.GetString("db_pass")
+		dbName := viper.GetString("db_name")
+		logger.SysLog("using PostgreSQL as database")
+		common.UsingPostgreSQL = true
+		dsn := fmt.Sprintf("user=%s password=%s database=%s host=%s",
+			dbUser, dbPass, dbName, unixSocket)
+		return gorm.Open(postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true, // disables implicit prepared statement usage
+		}), &gorm.Config{
+			PrepareStmt: true, // precompile SQL
+		})
 	}
 	// Use SQLite
 	logger.SysLog("SQL_DSN not set, using SQLite as database")
