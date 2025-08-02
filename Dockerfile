@@ -15,14 +15,15 @@ FROM golang:1.24.5 AS builder2
 
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
-    GOOS=linux
+    GOOS=linux \
+    GOAMD64=v3
 
 WORKDIR /build
 ADD go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=builder /build/build ./web/build
-RUN go build -ldflags "-s -w -X 'one-api/common.Version=$(cat VERSION)' -extldflags '-static'" -o one-api
+RUN go build -p $(nproc) -ldflags "-s -w -X 'one-api/common.Version=$(cat VERSION)' -extldflags '-static -O3'" -gcflags=all="-B -l=4" -trimpath -o one-api
 
 FROM alpine
 
