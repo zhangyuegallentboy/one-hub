@@ -121,7 +121,9 @@ func initHttpServer() {
 	server := gin.New()
 	server.Use(gin.Recovery())
 	server.Use(middleware.RequestId())
-	middleware.SetUpLogger(server)
+	if viper.GetString("gin_mode") == "debug" {
+		middleware.SetUpLogger(server)
+	}
 
 	trustedHeader := viper.GetString("trusted_header")
 	if trustedHeader != "" {
