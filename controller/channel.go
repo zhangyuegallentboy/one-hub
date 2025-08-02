@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"one-api/common"
 	"one-api/common/utils"
@@ -91,17 +92,30 @@ func AddChannel(c *gin.Context) {
 
 		channels = append(channels, localChannel)
 	}
-	err = model.BatchInsertChannels(channels)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
+
+	// 分批插入，每批1000条
+	batchSize := 1000
+	channelsCount := len(channels)
+	for i := 0; i < channelsCount; i += batchSize {
+		end := i + batchSize
+		if end > channelsCount {
+			end = channelsCount
+		}
+
+		batch := channels[i:end]
+		err = model.BatchInsertChannels(batch)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("批量插入失败（第%d-%d条）: %s", i+1, end, err.Error()),
+			})
+			return
+		}
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "",
+		"message": fmt.Sprintf("成功插入 %d 个渠道", channelsCount),
 	})
 }
 
